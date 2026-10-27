@@ -11,6 +11,9 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/joho/godotenv"
+	"github.com/felix-gnwn/ticketing-engine/internal/database"
 )
 
 func main() {
@@ -20,6 +23,25 @@ func main() {
 		Level: slog.LevelDebug, // Display DEBUG, INFO, WARN, and ERROR
 	}))
 	slog.SetDefault(logger)
+
+	// LOAD ENVIRONMENT VARIABLES
+	if err := godotenv.Load(); err != nil {
+		slog.Warn("No .env file found, relying on system environment variables")
+	}
+
+	// INIT DATABASE CONNECTION POOL
+	connString := os.Getenv("DB_CONNECTION_STRING")
+	if connString == "" {
+		slog.Error("DB_CONNECTION_STRING is not set in environment")
+		os.Exit(1)
+	}
+
+	dbPool, err := database.NewPostgresPool(connString)
+	if err != nil {
+		slog.Error("Failed to initialize database", "error", err)
+		os.Exit(1)
+	}
+	defer dbPool.Close()
 
 	// SETUP WORKER POOL
 	const numWorkers = 3
