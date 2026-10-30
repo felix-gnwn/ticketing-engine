@@ -43,6 +43,7 @@ The project is structured according to Clean Architecture (Onion/Hexagonal) prin
   - [x] PostgreSQL implementation for `UserRepository`
   - [x] PostgreSQL implementation for `TicketRepository`
 - [ ] **Layer 2: UseCase Layer**
+  - [x] Ticket event creation & inventory browsing logic
   - [ ] User authentication & management logic
   - [ ] Ticket booking & concurrency control logic
 - [ ] **Layer 3: Interface Adapters (Handlers)**
