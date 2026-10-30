@@ -17,6 +17,7 @@ type Ticket struct {
 type TicketRepository interface {
 	Create(ctx context.Context, ticket *Ticket) error
 	GetAvailableTickets(ctx context.Context) ([]*Ticket, error)
+	FindByID(ctx context.Context, id string) (*Ticket, error)
 }
 
 type TicketUseCase interface {
