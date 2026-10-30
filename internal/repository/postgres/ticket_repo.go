@@ -15,13 +15,13 @@ type ticketRepository struct {
 	db *pgxpool.Pool
 }
 
-func newTicketRepository(db *pgxpool.Pool) domain.TicketRepository {
+func NewTicketRepository(db *pgxpool.Pool) domain.TicketRepository {
 	return &ticketRepository{
 		db: db,
 	}
 }
 
-func (r *ticketRepository) Insert(ctx context.Context, ticket *domain.Ticket) error {
+func (r *ticketRepository) Create(ctx context.Context, ticket *domain.Ticket) error {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
@@ -53,11 +53,7 @@ func (r *ticketRepository) Insert(ctx context.Context, ticket *domain.Ticket) er
 		ticket.UpdatedAt,
 	)
 
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func (r *ticketRepository) FindByID(ctx context.Context, id string) (*domain.Ticket, error) {
@@ -97,4 +93,52 @@ func (r *ticketRepository) FindByID(ctx context.Context, id string) (*domain.Tic
 	}
 
 	return &ticket, nil
+}
+
+func (r *ticketRepository) GetAvailableTickets(ctx context.Context) ([]*domain.Ticket, error) {
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+
+	query := `
+		SELECT
+			id,
+			event_name,
+			price,
+			quota,
+			created_at,
+			updated_at
+		FROM
+			tickets
+		WHERE
+			quota > 0
+	`
+
+	rows, err := r.db.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var tickets []*domain.Ticket
+	for rows.Next() {
+		var t domain.Ticket
+		err := rows.Scan(
+			&t.ID,
+			&t.EventName,
+			&t.Price,
+			&t.Quota,
+			&t.CreatedAt,
+			&t.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		tickets = append(tickets, &t)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return tickets, nil
 }
