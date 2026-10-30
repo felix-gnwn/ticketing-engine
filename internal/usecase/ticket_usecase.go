@@ -19,7 +19,7 @@ func NewTicketUseCase(tr domain.TicketRepository) domain.TicketUseCase {
 	}
 }
 
-func (uc *ticketUseCase) CheckoutTicket(ctx context.Context, userID, eventID string, quantity int) (*domain.Ticket, error) {
+func (uc *ticketUseCase) CreateEvent(ctx context.Context, ticket *domain.Ticket) error {
 	if ticket.EventName == "" {
 		return domain.ErrInvalidEventName
 	}
@@ -68,4 +68,42 @@ func (uc *ticketUseCase) BrowseAvailable(ctx context.Context) ([]*domain.Ticket,
 	)
 
 	return tickets, nil
+}
+
+func (uc *ticketUseCase) CheckoutTicket(ctx context.Context, ticketID string, quantity int) error {
+	ticket, err := uc.ticketRepo.FindByID(ctx, ticketID)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to fetch ticket for checkout",
+			slog.String("ticket_id", ticketID),
+			slog.String("error", err.Error()),
+		)
+		return fmt.Errorf("repository failed to fetch ticket: %w", err)
+	}
+
+	if ticket.Quota < quantity {
+		slog.WarnContext(ctx, "checkout rejected: insufficient quota",
+			slog.String("ticket_id", ticketID),
+			slog.Int("current_quota", ticket.Quota),
+			slog.Int("requested_quantity", quantity),
+		)
+		return domain.ErrTicketUnavailable
+	}
+
+	// Anti race condition handler will be in repository layer
+	err = uc.ticketRepo.DecreaseQuota(ctx, ticketID, quantity)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to decrease quota during checkout",
+			slog.String("ticket_id", ticketID),
+			slog.Int("quantity", quantity),
+			slog.String("error", err.Error()),
+		)
+		return fmt.Errorf("repository failed to decrease quota: %w", err)
+	}
+
+	slog.InfoContext(ctx, "ticket successfully checked out",
+		slog.String("ticket_id", ticketID),
+		slog.Int("quantity", quantity),
+	)
+
+	return nil
 }

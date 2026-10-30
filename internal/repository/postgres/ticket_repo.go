@@ -142,3 +142,32 @@ func (r *ticketRepository) GetAvailableTickets(ctx context.Context) ([]*domain.T
 
 	return tickets, nil
 }
+
+func (r *ticketRepository) DecreaseQuota(ctx context.Context, id string, quantity int) error {
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+
+	query := `
+		UPDATE
+			tickets
+		SET
+			quota = quota - $2,
+			updated_at = $3
+		WHERE
+			id = $1
+			AND quota >= $2
+	`
+
+	now := time.Now().UTC()
+
+	commandTag, err := r.db.Exec(ctx, query, id, quantity, now)
+	if err != nil {
+		return err
+	}
+
+	if commandTag.RowsAffected() == 0 {
+		return domain.ErrTicketUnavailable
+	}
+
+	return nil
+}

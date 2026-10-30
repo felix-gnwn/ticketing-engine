@@ -21,7 +21,7 @@ func NewUserRepository(db *pgxpool.Pool) domain.UserRepository {
 	}
 }
 
-func (r *userRepository) Insert(ctx context.Context, user *domain.User) error {
+func (r *userRepository) Create(ctx context.Context, user *domain.User) error {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
@@ -59,7 +59,7 @@ func (r *userRepository) Insert(ctx context.Context, user *domain.User) error {
 	return err
 }
 
-func (r *userRepository) FindByEmail(ctx context.Context, email string) (*domain.User, error) {
+func (r *userRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
