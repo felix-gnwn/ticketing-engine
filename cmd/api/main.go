@@ -14,6 +14,9 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/felix-gnwn/ticketing-engine/internal/database"
+	"github.com/felix-gnwn/ticketing-engine/internal/handler"
+	postgres "github.com/felix-gnwn/ticketing-engine/internal/repository/postgres"
+	"github.com/felix-gnwn/ticketing-engine/internal/usecase"
 )
 
 func main() {
@@ -43,6 +46,11 @@ func main() {
 	}
 	defer dbPool.Close()
 
+	// WIRING DEPENDENCY INJECTION
+	ticketRepo := postgres.NewTicketRepository(dbPool)
+	ticketUC := usecase.NewTicketUseCase(ticketRepo)
+	ticketHandler := handler.NewTicketHandler(ticketUC)
+
 	// SETUP WORKER POOL
 	const numWorkers = 3
 	jobs := make(chan string, 100)
@@ -54,8 +62,11 @@ func main() {
 	}
 
 	// SETUP HTTP ROUTER & SERVER
-	mux := http.DefaultServeMux 
+	mux := http.DefaultServeMux
 
+	mux.HandleFunc("POST /api/v1/events", ticketHandler.CreateEvent)
+	mux.HandleFunc("GET /api/v1/events", ticketHandler.BrowseAvailable)
+	mux.HandleFunc("POST /api/v1/tickets/checkout", ticketHandler.CheckoutTicket)
 	mux.HandleFunc("/api/ticket", func(w http.ResponseWriter, r *http.Request) {
 		orderID := fmt.Sprintf("TICKET-%d", time.Now().UnixNano())
 
@@ -63,6 +74,23 @@ func main() {
 
 		w.WriteHeader(http.StatusAccepted)
 		w.Write([]byte(fmt.Sprintf("Order %s has been accepted and queued for processing.\n", orderID)))
+	})
+
+	// Health Probe (Liveness)
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
+	})
+
+	// Readiness Probe
+	mux.HandleFunc("GET /readyz", func(w http.ResponseWriter, r *http.Request) {
+		if err := dbPool.Ping(r.Context()); err != nil {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			w.Write([]byte("DATABASE_UNAVAILABLE"))
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("READY"))
 	})
 
 	srv := &http.Server{

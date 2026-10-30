@@ -42,12 +42,13 @@ The project is structured according to Clean Architecture (Onion/Hexagonal) prin
   - [x] Connection pool initialization using `pgxpool`
   - [x] PostgreSQL implementation for `UserRepository`
   - [x] PostgreSQL implementation for `TicketRepository`
-- [ ] **Layer 2: UseCase Layer**
+- [x] **Layer 2: UseCase Layer**
   - [x] Ticket event creation & inventory browsing logic
   - [ ] User authentication & management logic
-  - [ ] Ticket booking & concurrency control logic
-- [ ] **Layer 3: Interface Adapters (Handlers)**
-  - [ ] REST API endpoints with HTTP Health Probes (`/healthz`, `/readyz`)
+  - [x] Ticket booking & concurrency control logic
+  - [x] Ticket event creation & inventory browsing logic
+- [x] **Layer 3: Interface Adapters (Handlers)**
+  - [x] REST API endpoints with HTTP Health Probes (`/healthz`, `/readyz`)
   - [ ] gRPC services & Protobuf definitions
 - [ ] **Event-Driven & Asynchronous Processing**
   - [ ] Message broker integration (Apache Kafka)

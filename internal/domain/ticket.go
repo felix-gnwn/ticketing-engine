@@ -18,9 +18,13 @@ type TicketRepository interface {
 	Create(ctx context.Context, ticket *Ticket) error
 	GetAvailableTickets(ctx context.Context) ([]*Ticket, error)
 	FindByID(ctx context.Context, id string) (*Ticket, error)
+
+	DecreaseQuota(ctx context.Context, id string, quantity int) error
 }
 
 type TicketUseCase interface {
 	CreateEvent(ctx context.Context, ticket *Ticket) error
 	BrowseAvailable(ctx context.Context) ([]*Ticket, error)
+
+	CheckoutTicket(ctx context.Context, ticketID string, quantity int) error
 }
