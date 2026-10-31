@@ -43,18 +43,23 @@ The project is structured according to Clean Architecture (Onion/Hexagonal) prin
   - [x] PostgreSQL implementation for `UserRepository`
   - [x] PostgreSQL implementation for `TicketRepository`
 - [x] **Layer 2: UseCase Layer**
-  - [x] Ticket event creation & inventory browsing logic
-  - [ ] User authentication & management logic
+  - [x] User authentication & management logic
   - [x] Ticket booking & concurrency control logic
   - [x] Ticket event creation & inventory browsing logic
 - [x] **Layer 3: Interface Adapters (Handlers)**
   - [x] REST API endpoints with HTTP Health Probes (`/healthz`, `/readyz`)
+  - [x] JWT Authentication Middleware for route protection
   - [ ] gRPC services & Protobuf definitions
-- [ ] **Event-Driven & Asynchronous Processing**
+- [ ] **Module 2: Product & Asset Service**
+  - [ ] AWS S3 / MinIO integration (Pre-signed URL for Govt. ID Card upload)
+- [ ] **Module 3: Order, Event-Driven & Caching**
+  - [ ] Distributed Caching & Idempotency Key (Redis)
   - [ ] Message broker integration (Apache Kafka)
   - [ ] Modular Dispatcher-Worker pattern implementation
   - [ ] Background job execution (email notifications, PDF ticket generation)
-- [ ] **Cloud-Native Preparation & Testing**
-  - [ ] Kubernetes manifests (`Deployment`, `Service`, `ConfigMap`, `HPA`)
+- [ ] **Module 4: Observability, Testing & Cloud-Native**
+  - [ ] Middleware Context & Distributed Tracing (Trace ID)
+  - [ ] Unit Testing for core business logic (50-70% coverage)
+  - [ ] Kubernetes manifests ('Deployment', 'Service', 'ConfigMap', 'Ingress')
   - [ ] OpenAPI / Swagger specification
   - [ ] Load testing & integration testing suite

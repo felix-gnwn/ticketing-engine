@@ -14,6 +14,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/felix-gnwn/ticketing-engine/internal/database"
+	"github.com/felix-gnwn/ticketing-engine/internal/middleware"
 	"github.com/felix-gnwn/ticketing-engine/internal/handler"
 	postgres "github.com/felix-gnwn/ticketing-engine/internal/repository/postgres"
 	"github.com/felix-gnwn/ticketing-engine/internal/usecase"
@@ -32,6 +33,13 @@ func main() {
 		slog.Warn("No .env file found, relying on system environment variables")
 	}
 
+	// JWT SECRET
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		slog.Error("JWT_SECRET is not set in environment")
+		os.Exit(1)
+	}
+
 	// INIT DATABASE CONNECTION POOL
 	connString := os.Getenv("DB_CONNECTION_STRING")
 	if connString == "" {
@@ -46,10 +54,15 @@ func main() {
 	}
 	defer dbPool.Close()
 
-	// WIRING DEPENDENCY INJECTION
+	// WIRING DEPENDENCY INJECTION - TICKET MODULE
 	ticketRepo := postgres.NewTicketRepository(dbPool)
 	ticketUC := usecase.NewTicketUseCase(ticketRepo)
 	ticketHandler := handler.NewTicketHandler(ticketUC)
+
+	// WIRING DEPENDENCY INJECTION - TICKET MODULE
+	userRepo := postgres.NewUserRepository(dbPool)
+	userUC := usecase.NewUserUseCase(userRepo, jwtSecret)
+	userHandler := handler.NewUserHandler(userUC)
 
 	// SETUP WORKER POOL
 	const numWorkers = 3
@@ -64,9 +77,14 @@ func main() {
 	// SETUP HTTP ROUTER & SERVER
 	mux := http.DefaultServeMux
 
+	// --- ROUTES: AUTH ---
+	mux.HandleFunc("POST /api/v1/auth/register", userHandler.Register)
+	mux.HandleFunc("POST /api/v1/auth/login", userHandler.Login)
+
+	// --- ROUTES: TICKET ---
 	mux.HandleFunc("POST /api/v1/events", ticketHandler.CreateEvent)
 	mux.HandleFunc("GET /api/v1/events", ticketHandler.BrowseAvailable)
-	mux.HandleFunc("POST /api/v1/tickets/checkout", ticketHandler.CheckoutTicket)
+	mux.HandleFunc("POST /api/v1/tickets/checkout", middleware.RequireAuth(ticketHandler.CheckoutTicket))
 	mux.HandleFunc("/api/ticket", func(w http.ResponseWriter, r *http.Request) {
 		orderID := fmt.Sprintf("TICKET-%d", time.Now().UnixNano())
 
