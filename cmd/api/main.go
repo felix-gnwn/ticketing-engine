@@ -14,6 +14,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/felix-gnwn/ticketing-engine/internal/database"
+	"github.com/felix-gnwn/ticketing-engine/internal/middleware"
 	"github.com/felix-gnwn/ticketing-engine/internal/handler"
 	postgres "github.com/felix-gnwn/ticketing-engine/internal/repository/postgres"
 	"github.com/felix-gnwn/ticketing-engine/internal/usecase"
@@ -83,7 +84,7 @@ func main() {
 	// --- ROUTES: TICKET ---
 	mux.HandleFunc("POST /api/v1/events", ticketHandler.CreateEvent)
 	mux.HandleFunc("GET /api/v1/events", ticketHandler.BrowseAvailable)
-	mux.HandleFunc("POST /api/v1/tickets/checkout", ticketHandler.CheckoutTicket)
+	mux.HandleFunc("POST /api/v1/tickets/checkout", middleware.RequireAuth(ticketHandler.CheckoutTicket))
 	mux.HandleFunc("/api/ticket", func(w http.ResponseWriter, r *http.Request) {
 		orderID := fmt.Sprintf("TICKET-%d", time.Now().UnixNano())
 

@@ -48,6 +48,7 @@ The project is structured according to Clean Architecture (Onion/Hexagonal) prin
   - [x] Ticket event creation & inventory browsing logic
 - [x] **Layer 3: Interface Adapters (Handlers)**
   - [x] REST API endpoints with HTTP Health Probes (`/healthz`, `/readyz`)
+  - [x] JWT Authentication Middleware for route protection
   - [ ] gRPC services & Protobuf definitions
 - [ ] **Module 2: Product & Asset Service**
   - [ ] AWS S3 / MinIO integration (Pre-signed URL for Govt. ID Card upload)
