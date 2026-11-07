@@ -27,7 +27,7 @@ func NewPostgresPool(connString string) (*pgxpool.Pool, error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	
+
 	if err := pool.Ping(ctx); err != nil {
 		return nil, fmt.Errorf("database ping failed: %w", err)
 	}
@@ -35,4 +35,3 @@ func NewPostgresPool(connString string) (*pgxpool.Pool, error) {
 	slog.Info("Successfully connected to PostgreSQL connection pool")
 	return pool, nil
 }
-

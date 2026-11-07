@@ -43,7 +43,7 @@ func (r *ticketRepository) Create(ctx context.Context, ticket *domain.Ticket) er
 			$6
 		)
 	`
-	
+
 	_, err := r.db.Exec(ctx, query,
 		ticket.ID,
 		ticket.EventName,

@@ -13,19 +13,19 @@ import (
 )
 
 type UploadResponse struct {
-	AssetID			uuid.UUID	`json:"asset_id"`
-	PresignedURL	string		`json:"presigned_url"`
+	AssetID      uuid.UUID `json:"asset_id"`
+	PresignedURL string    `json:"presigned_url"`
 }
 
 type assetUseCase struct {
-	assetRepo		domain.AssetRepository
-	storageRepo		domain.StorageRepository
+	assetRepo   domain.AssetRepository
+	storageRepo domain.StorageRepository
 }
 
 func NewAssetUseCase(ar domain.AssetRepository, sr domain.StorageRepository) *assetUseCase {
 	return &assetUseCase{
-		assetRepo:		ar,
-		storageRepo:	sr,
+		assetRepo:   ar,
+		storageRepo: sr,
 	}
 }
 
@@ -39,12 +39,12 @@ func (u *assetUseCase) RequestUploadURL(ctx context.Context, userID uuid.UUID, f
 
 	assetID := uuid.New()
 	newAsset := &domain.Asset{
-		ID:			assetID,
-		UserID:		userID,
-		ObjectKey:	objectKey,
-		Status:		domain.AssetStatusPending,
-		CreatedAt:	time.Now(),
-		UpdatedAt:	time.Now(),
+		ID:        assetID,
+		UserID:    userID,
+		ObjectKey: objectKey,
+		Status:    domain.AssetStatusPending,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}
 
 	err := u.assetRepo.CreateAsset(ctx, newAsset)
@@ -58,8 +58,8 @@ func (u *assetUseCase) RequestUploadURL(ctx context.Context, userID uuid.UUID, f
 	}
 
 	return &UploadResponse{
-		AssetID:		assetID,
-		PresignedURL:	presignedURL,
+		AssetID:      assetID,
+		PresignedURL: presignedURL,
 	}, nil
 }
 

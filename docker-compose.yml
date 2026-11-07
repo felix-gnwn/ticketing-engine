@@ -10,6 +10,19 @@ services:
       - "${POSTGRES_PORT}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+  minio:
+    image: ghcr.io/coollabsio/minio:latest
+    container_name: ticketing-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
 
 volumes:
   pgdata:
+  minio_data:

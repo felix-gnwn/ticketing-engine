@@ -15,8 +15,8 @@ import (
 type contextKey string
 
 const (
-	UserIDKey	contextKey = "userID"
-	RoleKey		contextKey = "role"
+	UserIDKey contextKey = "userID"
+	RoleKey   contextKey = "role"
 )
 
 func writeError(w http.ResponseWriter, status int, message string) {

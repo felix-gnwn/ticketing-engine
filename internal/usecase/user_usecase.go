@@ -13,14 +13,14 @@ import (
 )
 
 type userUseCase struct {
-	userRepo	domain.UserRepository
-	jwtSecret	string
+	userRepo  domain.UserRepository
+	jwtSecret string
 }
 
 func NewUserUseCase(repo domain.UserRepository, secret string) domain.UserUseCase {
 	return &userUseCase{
-		userRepo:	repo,
-		jwtSecret:	secret,
+		userRepo:  repo,
+		jwtSecret: secret,
 	}
 }
 
@@ -62,10 +62,10 @@ func (u *userUseCase) Login(ctx context.Context, email, password string) (string
 
 func (u *userUseCase) generateJWT(user *domain.User) (string, error) {
 	claims := jwt.MapClaims{
-		"sub":		user.ID,
-		"role":		user.Role,
-		"email":	user.Email,
-		"exp":		time.Now().Add(24 * time.Hour).Unix(),
+		"sub":   user.ID,
+		"role":  user.Role,
+		"email": user.Email,
+		"exp":   time.Now().Add(24 * time.Hour).Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

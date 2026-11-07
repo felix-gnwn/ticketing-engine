@@ -45,7 +45,7 @@ func (r *userRepository) Create(ctx context.Context, user *domain.User) error {
 			$7
 		)
 	`
-	
+
 	_, err := r.db.Exec(ctx, query,
 		user.ID,
 		user.Name,

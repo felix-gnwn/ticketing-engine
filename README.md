@@ -50,8 +50,12 @@ The project is structured according to Clean Architecture (Onion/Hexagonal) prin
   - [x] REST API endpoints with HTTP Health Probes (`/healthz`, `/readyz`)
   - [x] JWT Authentication Middleware for route protection
   - [ ] gRPC services & Protobuf definitions
-- [ ] **Module 2: Product & Asset Service**
-  - [ ] AWS S3 / MinIO integration (Pre-signed URL for Govt. ID Card upload)
+- [x] **Module 2: Product & Asset Service**
+  - [x] AWS S3 / MinIO integration (Pre-signed URL for Govt. ID Card upload)
+  - [x] S3-compatible client implementation using AWS SDK for Go v2
+  - [x] Decoupled BLOB storage architecture with PostgreSQL metadata tracking
+  - [x] Two-phase upload workflow (PENDING -&gt; UPLOADED state transition)
+  - [x] Clean Architecture layer separation (Domain, UseCase, Handler, Repository)
 - [ ] **Module 3: Order, Event-Driven & Caching**
   - [ ] Distributed Caching & Idempotency Key (Redis)
   - [ ] Message broker integration (Apache Kafka)

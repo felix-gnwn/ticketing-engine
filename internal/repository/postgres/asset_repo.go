@@ -41,7 +41,7 @@ func (r *assetRepository) CreateAsset(ctx context.Context, asset *domain.Asset) 
 			$6
 		)
 	`
-	
+
 	_, err := r.db.Exec(ctx, query,
 		asset.ID,
 		asset.UserID.String(),
@@ -64,7 +64,7 @@ func (r *assetRepository) UpdateAssetStatus(ctx context.Context, id uuid.UUID, s
 		WHERE
 			id = $2
 	`
-	
+
 	commandTag, err := r.db.Exec(ctx, query, status, id)
 	if err != nil {
 		return err
@@ -91,10 +91,10 @@ func (r *assetRepository) GetAssetByID(ctx context.Context, id uuid.UUID) (*doma
 		WHERE
 			id = $1
 	`
-	
+
 	var asset domain.Asset
 	var userIDStr string
-	
+
 	err := r.db.QueryRow(ctx, query, id).Scan(
 		&asset.ID,
 		&userIDStr,
@@ -103,7 +103,7 @@ func (r *assetRepository) GetAssetByID(ctx context.Context, id uuid.UUID) (*doma
 		&asset.CreatedAt,
 		&asset.UpdatedAt,
 	)
-	
+
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, errors.New("asset not found")
