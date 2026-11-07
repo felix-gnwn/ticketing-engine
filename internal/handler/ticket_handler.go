@@ -19,15 +19,15 @@ func NewTicketHandler(ticketUC domain.TicketUseCase) *TicketHandler {
 
 // Request & Response Payloads
 type createEventRequest struct {
-	ID			string	`json:"id"`
-	EventName	string	`json:"event_name"`
-	Quota		int		`json:"quota"`
-	Price		float64	`json:"price"`
+	ID        string  `json:"id"`
+	EventName string  `json:"event_name"`
+	Quota     int     `json:"quota"`
+	Price     float64 `json:"price"`
 }
 
 type checkoutRequest struct {
-	TicketID	string	`json:"ticket_id"`
-	Quantity	int		`json:"quantity"`
+	TicketID string `json:"ticket_id"`
+	Quantity int    `json:"quantity"`
 }
 
 // HTTP Handlers
@@ -39,10 +39,10 @@ func (h *TicketHandler) CreateEvent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ticket := &domain.Ticket{
-		ID:			req.ID,
-		EventName:	req.EventName,
-		Quota:		req.Quota,
-		Price:		req.Price,
+		ID:        req.ID,
+		EventName: req.EventName,
+		Quota:     req.Quota,
+		Price:     req.Price,
 	}
 
 	err := h.ticketUC.CreateEvent(r.Context(), ticket)
@@ -52,8 +52,8 @@ func (h *TicketHandler) CreateEvent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusCreated, jsonResponse{
-		Status:		"success",
-		Message:	"Event created successfully",
+		Status:  "success",
+		Message: "Event created successfully",
 	})
 }
 
@@ -65,8 +65,8 @@ func (h *TicketHandler) BrowseAvailable(w http.ResponseWriter, r *http.Request) 
 	}
 
 	writeJSON(w, http.StatusOK, jsonResponse{
-		Status:	"success",
-		Data:	tickets,
+		Status: "success",
+		Data:   tickets,
 	})
 }
 
@@ -91,7 +91,7 @@ func (h *TicketHandler) CheckoutTicket(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, jsonResponse{
-		Status:		"success",
-		Message:	"Ticket successfully checked out",
+		Status:  "success",
+		Message: "Ticket successfully checked out",
 	})
 }

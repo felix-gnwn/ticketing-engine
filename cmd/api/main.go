@@ -12,11 +12,17 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/joho/godotenv"
+
 	"github.com/felix-gnwn/ticketing-engine/internal/database"
-	"github.com/felix-gnwn/ticketing-engine/internal/middleware"
 	"github.com/felix-gnwn/ticketing-engine/internal/handler"
+	"github.com/felix-gnwn/ticketing-engine/internal/middleware"
 	postgres "github.com/felix-gnwn/ticketing-engine/internal/repository/postgres"
+	storage "github.com/felix-gnwn/ticketing-engine/internal/repository/storage"
 	"github.com/felix-gnwn/ticketing-engine/internal/usecase"
 )
 
@@ -64,6 +70,45 @@ func main() {
 	userUC := usecase.NewUserUseCase(userRepo, jwtSecret)
 	userHandler := handler.NewUserHandler(userUC)
 
+	// INIT AWS/MINIO CONFIG
+	minioEndpoint := os.Getenv("MINIO_ENDPOINT")
+	minioRegion := os.Getenv("MINIO_REGION")
+	minioAccessKey := os.Getenv("MINIO_ACCESS_KEY")
+	minioSecretKey := os.Getenv("MINIO_SECRET_KEY")
+	bucketName := os.Getenv("MINIO_BUCKET_NAME")
+
+	if bucketName == "" || minioEndpoint == "" {
+		slog.Error("MinIO environment variables are missing")
+		os.Exit(1)
+	}
+
+	customResolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
+		return aws.Endpoint{
+			URL:           minioEndpoint,
+			SigningRegion: minioRegion,
+		}, nil
+	})
+
+	cfg, err := config.LoadDefaultConfig(context.TODO(),
+		config.WithRegion(minioRegion),
+		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(minioAccessKey, minioSecretKey, "")),
+		config.WithEndpointResolverWithOptions(customResolver),
+	)
+	if err != nil {
+		slog.Error("Failed to load MinIO configuration", "error", err)
+		os.Exit(1)
+	}
+
+	s3Client := s3.NewFromConfig(cfg, func(o *s3.Options) {
+		o.UsePathStyle = true
+	})
+
+	// WIRING DEPENDENCY INJECTION - ASSET MODULE
+	assetRepo := postgres.NewAssetRepository(dbPool)
+	storageRepo := storage.NewS3StorageRepository(s3Client, bucketName)
+	assetUC := usecase.NewAssetUseCase(assetRepo, storageRepo)
+	assetHandler := handler.NewAssetHandler(assetUC)
+
 	// SETUP WORKER POOL
 	const numWorkers = 3
 	jobs := make(chan string, 100)
@@ -94,6 +139,10 @@ func main() {
 		w.Write([]byte(fmt.Sprintf("Order %s has been accepted and queued for processing.\n", orderID)))
 	})
 
+	// --- ROUTES: ASSET ---
+	mux.HandleFunc("POST /api/v1/assets/upload-url", middleware.RequireAuth(assetHandler.RequestUploadURL))
+	mux.HandleFunc("PUT /api/v1/assets/confirm", middleware.RequireAuth(assetHandler.ConfirmUpload))
+
 	// Health Probe (Liveness)
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -118,10 +167,10 @@ func main() {
 
 	// Run HTTP server asynchronously
 	go func() {
-		slog.Info("Ticketing Engine is starting", 
-			"port", 8080, 
+		slog.Info("Ticketing Engine is starting",
+			"port", 8080,
 			"pprof_url", "http://localhost:8080/debug/pprof")
-			
+
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			slog.Error("Server crashed", "error", err)
 			os.Exit(1)
@@ -138,7 +187,7 @@ func main() {
 	// Shutdown HTTP Server (Reject new incoming requests)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	
+
 	if err := srv.Shutdown(ctx); err != nil {
 		slog.Error("Failed to gracefully shutdown HTTP server", "error", err)
 	} else {
@@ -158,15 +207,15 @@ func worker(id int, jobs <-chan string, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	for orderID := range jobs {
-		slog.Info("Worker started processing", 
-			"worker_id", id, 
+		slog.Info("Worker started processing",
+			"worker_id", id,
 			"order_id", orderID)
-		
+
 		// Simulate heavy database transaction or external API call
-		time.Sleep(2 * time.Second) 
-		
-		slog.Info("Worker finished processing", 
-			"worker_id", id, 
+		time.Sleep(2 * time.Second)
+
+		slog.Info("Worker finished processing",
+			"worker_id", id,
 			"order_id", orderID)
 	}
 	slog.Debug("Worker stopped (no more jobs in queue)", "worker_id", id)

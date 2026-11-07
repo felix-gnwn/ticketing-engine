@@ -16,14 +16,14 @@ var validate = validator.New()
 
 // Request & Response Payloads
 type RegisterRequest struct {
-	Name		string	`json:"name" validate:"required"`
-	Email		string	`json:"email" validate:"required,email"`
-	Password	string	`json:"password" validate:"required,min=6"`
+	Name     string `json:"name" validate:"required"`
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required,min=6"`
 }
 
 type LoginRequest struct {
-	Email		string	`json:"email" validate:"required,email"`
-	Password	string	`json:"password" validate:"required"`
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required"`
 }
 
 type UserHandler struct {
@@ -45,14 +45,14 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := validate.Struct(req); err != nil {
-		writeError(w, http.StatusBadRequest, err) 
+		writeError(w, http.StatusBadRequest, err)
 		return
 	}
 
 	user := &domain.User{
-		Name:		req.Name,
-		Email:		req.Email,
-		Password:	req.Password,
+		Name:     req.Name,
+		Email:    req.Email,
+		Password: req.Password,
 	}
 
 	if err := h.userUC.Register(r.Context(), user); err != nil {
