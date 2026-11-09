@@ -9,4 +9,11 @@ var (
 
 	ErrTicketNotFound    = errors.New("ticket not found")
 	ErrTicketUnavailable = errors.New("ticket is already sold or locked")
+
+	ErrOrderNotFound     = errors.New("order not found")
+	ErrInsufficientQuota = errors.New("insufficient ticket quota")
+	ErrInvalidQuantity   = errors.New("order quantity must be greater than zero")
+	ErrDuplicateOrder    = errors.New("duplicate order request detected (idempotent conflict)")
+	ErrOrderAlreadyPaid  = errors.New("order is already paid")
+	ErrOrderExpired      = errors.New("order has expired")
 )

@@ -36,7 +36,7 @@ The project is structured according to Clean Architecture (Onion/Hexagonal) prin
   - [x] Graceful shutdown handling (`SIGINT`, `SIGTERM`)
   - [x] Runtime profiling integration (`pprof`)
 - [x] **Layer 1: Domain Layer**
-  - [x] Core domain entities (`User`, `Ticket`)
+  - [x] Core domain entities (`User`, `Ticket`, `Asset`, `Order`)
   - [x] Repository abstraction contracts (interfaces)
 - [x] **Layer 4: Infrastructure / Repository Layer**
   - [x] Connection pool initialization using `pgxpool`
@@ -57,7 +57,11 @@ The project is structured according to Clean Architecture (Onion/Hexagonal) prin
   - [x] Two-phase upload workflow (PENDING -&gt; UPLOADED state transition)
   - [x] Clean Architecture layer separation (Domain, UseCase, Handler, Repository)
 - [ ] **Module 3: Order, Event-Driven & Caching**
-  - [ ] Distributed Caching & Idempotency Key (Redis)
+  - [x] Schema evolution & database migration (`000003_create_orders_table`)
+  - [x] Core order domain entities & repository abstraction contracts
+  - [ ] ACID Database Transactions (`pgx.Tx`) & Optimistic Concurrency Control (OCC)
+  - [ ] Distributed Caching & Idempotency Key (Redis Cache-Aside Pattern)
+  - [ ] Distributed Idempotency Key Engine (Redis Atomic SetNX + TTL)
   - [ ] Message broker integration (Apache Kafka)
   - [ ] Modular Dispatcher-Worker pattern implementation
   - [ ] Background job execution (email notifications, PDF ticket generation)
