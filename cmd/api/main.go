@@ -21,6 +21,7 @@ import (
 	"github.com/felix-gnwn/ticketing-engine/internal/database"
 	"github.com/felix-gnwn/ticketing-engine/internal/handler"
 	"github.com/felix-gnwn/ticketing-engine/internal/middleware"
+	cache "github.com/felix-gnwn/ticketing-engine/internal/repository/cache"
 	postgres "github.com/felix-gnwn/ticketing-engine/internal/repository/postgres"
 	storage "github.com/felix-gnwn/ticketing-engine/internal/repository/storage"
 	"github.com/felix-gnwn/ticketing-engine/internal/usecase"
@@ -60,8 +61,31 @@ func main() {
 	}
 	defer dbPool.Close()
 
+	// INIT REDIS CONNECTION POOL
+	redisHost := os.Getenv("REDIS_HOST")
+	redisPort := os.Getenv("REDIS_PORT")
+	redisPassword := os.Getenv("REDIS_PASSWORD")
+
+	if redisHost == "" {
+		redisHost = "localhost"
+	}
+
+	if redisPort == "" {
+		redisPort = "6379"
+	}
+
+	redisClient, err := database.NewRedisClient(redisHost, redisPort, redisPassword)
+	if err != nil {
+		slog.Error("Failed to initialize Redis client", "error", err)
+		os.Exit(1)
+	}
+
+	defer redisClient.Close()
+	slog.Info("Successfully connected to Redis connection pool", "host", redisHost, "port", redisPort)
+
 	// WIRING DEPENDENCY INJECTION - TICKET MODULE
-	ticketRepo := postgres.NewTicketRepository(dbPool)
+	pgTicketRepo := postgres.NewTicketRepository(dbPool)
+	ticketRepo := cache.NewCachedTicketRepository(pgTicketRepo, redisClient)
 	ticketUC := usecase.NewTicketUseCase(ticketRepo)
 	ticketHandler := handler.NewTicketHandler(ticketUC)
 

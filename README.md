@@ -60,7 +60,7 @@ The project is structured according to Clean Architecture (Onion/Hexagonal) prin
   - [x] Schema evolution & database migration (`000003_create_orders_table`)
   - [x] Core order domain entities & repository abstraction contracts
   - [ ] ACID Database Transactions (`pgx.Tx`) & Optimistic Concurrency Control (OCC)
-  - [ ] Distributed Caching & Idempotency Key (Redis Cache-Aside Pattern)
+  - [X] Distributed Caching & Idempotency Key (Redis Cache-Aside Pattern)
   - [ ] Distributed Idempotency Key Engine (Redis Atomic SetNX + TTL)
   - [ ] Message broker integration (Apache Kafka)
   - [ ] Modular Dispatcher-Worker pattern implementation
