@@ -13,11 +13,11 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
+	awsConfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/joho/godotenv"
 
+	appConfig "github.com/felix-gnwn/ticketing-engine/internal/config"
 	"github.com/felix-gnwn/ticketing-engine/internal/database"
 	"github.com/felix-gnwn/ticketing-engine/internal/handler"
 	"github.com/felix-gnwn/ticketing-engine/internal/middleware"
@@ -35,26 +35,15 @@ func main() {
 	}))
 	slog.SetDefault(logger)
 
-	// LOAD ENVIRONMENT VARIABLES
-	if err := godotenv.Load(); err != nil {
-		slog.Warn("No .env file found, relying on system environment variables")
-	}
-
-	// JWT SECRET
-	jwtSecret := os.Getenv("JWT_SECRET")
-	if jwtSecret == "" {
-		slog.Error("JWT_SECRET is not set in environment")
+	// LOAD ENTERPRISE CONFIGURATION (Fail-Fast & Centralized)
+	cfg, err := appConfig.Load()
+	if err != nil {
+		slog.Error("Configuration initialization failed", "error", err)
 		os.Exit(1)
 	}
 
 	// INIT DATABASE CONNECTION POOL
-	connString := os.Getenv("DB_CONNECTION_STRING")
-	if connString == "" {
-		slog.Error("DB_CONNECTION_STRING is not set in environment")
-		os.Exit(1)
-	}
-
-	dbPool, err := database.NewPostgresPool(connString)
+	dbPool, err := database.NewPostgresPool(cfg.DBConnString)
 	if err != nil {
 		slog.Error("Failed to initialize database", "error", err)
 		os.Exit(1)
@@ -62,74 +51,56 @@ func main() {
 	defer dbPool.Close()
 
 	// INIT REDIS CONNECTION POOL
-	redisHost := os.Getenv("REDIS_HOST")
-	redisPort := os.Getenv("REDIS_PORT")
-	redisPassword := os.Getenv("REDIS_PASSWORD")
-
-	if redisHost == "" {
-		redisHost = "localhost"
-	}
-
-	if redisPort == "" {
-		redisPort = "6379"
-	}
-
-	redisClient, err := database.NewRedisClient(redisHost, redisPort, redisPassword)
+	redisClient, err := database.NewRedisClient(cfg.RedisHost, cfg.RedisPort, cfg.RedisPassword)
 	if err != nil {
 		slog.Error("Failed to initialize Redis client", "error", err)
 		os.Exit(1)
 	}
 
 	defer redisClient.Close()
-	slog.Info("Successfully connected to Redis connection pool", "host", redisHost, "port", redisPort)
+	slog.Info("Successfully connected to Redis connection pool", "host", cfg.RedisHost, "port", cfg.RedisPort)
 
-	// WIRING DEPENDENCY INJECTION - TICKET MODULE
+	// WIRING DEPENDENCY INJECTION - TICKET MODULE (With Redis Cache-Aside Decorator)
 	pgTicketRepo := postgres.NewTicketRepository(dbPool)
 	ticketRepo := cache.NewCachedTicketRepository(pgTicketRepo, redisClient)
 	ticketUC := usecase.NewTicketUseCase(ticketRepo)
 	ticketHandler := handler.NewTicketHandler(ticketUC)
 
-	// WIRING DEPENDENCY INJECTION - TICKET MODULE
+	// WIRING DEPENDENCY INJECTION - USER MODULE
 	userRepo := postgres.NewUserRepository(dbPool)
-	userUC := usecase.NewUserUseCase(userRepo, jwtSecret)
+	userUC := usecase.NewUserUseCase(userRepo, cfg.JWTSecret)
 	userHandler := handler.NewUserHandler(userUC)
 
+	// WIRING DEPENDENCY INJECTION - ORDER MODULE
+	orderRepo := postgres.NewOrderRepository(dbPool)
+	orderUC := usecase.NewOrderUseCase(orderRepo, ticketRepo)
+	orderHandler := handler.NewOrderHandler(orderUC)
+
 	// INIT AWS/MINIO CONFIG
-	minioEndpoint := os.Getenv("MINIO_ENDPOINT")
-	minioRegion := os.Getenv("MINIO_REGION")
-	minioAccessKey := os.Getenv("MINIO_ACCESS_KEY")
-	minioSecretKey := os.Getenv("MINIO_SECRET_KEY")
-	bucketName := os.Getenv("MINIO_BUCKET_NAME")
-
-	if bucketName == "" || minioEndpoint == "" {
-		slog.Error("MinIO environment variables are missing")
-		os.Exit(1)
-	}
-
 	customResolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
 		return aws.Endpoint{
-			URL:           minioEndpoint,
-			SigningRegion: minioRegion,
+			URL:           cfg.MinIOEndpoint,
+			SigningRegion: cfg.MinIORegion,
 		}, nil
 	})
 
-	cfg, err := config.LoadDefaultConfig(context.TODO(),
-		config.WithRegion(minioRegion),
-		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(minioAccessKey, minioSecretKey, "")),
-		config.WithEndpointResolverWithOptions(customResolver),
+	sdkCfg, err := awsConfig.LoadDefaultConfig(context.TODO(),
+		awsConfig.WithRegion(cfg.MinIORegion),
+		awsConfig.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(cfg.MinIOAccessKey, cfg.MinIOSecretKey, "")),
+		awsConfig.WithEndpointResolverWithOptions(customResolver),
 	)
 	if err != nil {
 		slog.Error("Failed to load MinIO configuration", "error", err)
 		os.Exit(1)
 	}
 
-	s3Client := s3.NewFromConfig(cfg, func(o *s3.Options) {
+	s3Client := s3.NewFromConfig(sdkCfg, func(o *s3.Options) {
 		o.UsePathStyle = true
 	})
 
 	// WIRING DEPENDENCY INJECTION - ASSET MODULE
 	assetRepo := postgres.NewAssetRepository(dbPool)
-	storageRepo := storage.NewS3StorageRepository(s3Client, bucketName)
+	storageRepo := storage.NewS3StorageRepository(s3Client, cfg.MinIOBucket)
 	assetUC := usecase.NewAssetUseCase(assetRepo, storageRepo)
 	assetHandler := handler.NewAssetHandler(assetUC)
 
@@ -160,12 +131,17 @@ func main() {
 		jobs <- orderID
 
 		w.WriteHeader(http.StatusAccepted)
-		w.Write([]byte(fmt.Sprintf("Order %s has been accepted and queued for processing.\n", orderID)))
+		w.Write([]byte(fmt.Sprintf("Order %s has been accepted and queued for processing.n", orderID)))
 	})
 
 	// --- ROUTES: ASSET ---
 	mux.HandleFunc("POST /api/v1/assets/upload-url", middleware.RequireAuth(assetHandler.RequestUploadURL))
 	mux.HandleFunc("PUT /api/v1/assets/confirm", middleware.RequireAuth(assetHandler.ConfirmUpload))
+
+	// --- ROUTES: ORDER ---
+	mux.HandleFunc("POST /api/v1/orders", middleware.RequireAuth(orderHandler.CreateOrder))
+	mux.HandleFunc("GET /api/v1/orders", middleware.RequireAuth(orderHandler.GetUserOrders))
+	mux.HandleFunc("GET /api/v1/orders/{id}", middleware.RequireAuth(orderHandler.GetOrderByID))
 
 	// Health Probe (Liveness)
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
@@ -185,15 +161,15 @@ func main() {
 	})
 
 	srv := &http.Server{
-		Addr:    ":8080",
+		Addr:    ":" + cfg.AppPort,
 		Handler: mux,
 	}
 
 	// Run HTTP server asynchronously
 	go func() {
 		slog.Info("Ticketing Engine is starting",
-			"port", 8080,
-			"pprof_url", "http://localhost:8080/debug/pprof")
+			"port", cfg.AppPort,
+			"pprof_url", fmt.Sprintf("http://localhost:%s/debug/pprof", cfg.AppPort))
 
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			slog.Error("Server crashed", "error", err)
