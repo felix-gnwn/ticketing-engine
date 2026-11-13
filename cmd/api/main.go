@@ -73,7 +73,8 @@ func main() {
 
 	// WIRING DEPENDENCY INJECTION - ORDER MODULE
 	orderRepo := postgres.NewOrderRepository(dbPool)
-	orderUC := usecase.NewOrderUseCase(orderRepo, ticketRepo)
+	idempotencyRepo := cache.NewRedisIdempotencyRepository(redisClient)
+	orderUC := usecase.NewOrderUseCase(orderRepo, ticketRepo, idempotencyRepo)
 	orderHandler := handler.NewOrderHandler(orderUC)
 
 	// INIT AWS/MINIO CONFIG
