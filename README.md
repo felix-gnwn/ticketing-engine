@@ -63,7 +63,7 @@ The project is structured according to Clean Architecture (Onion/Hexagonal) prin
   - [x] Distributed Caching & Idempotency Key (Redis Cache-Aside Pattern)
   - [x] Enterprise Centralized Config (internal/config)
   - [x] Distributed Idempotency Key Engine (Redis Atomic SetNX + TTL)
-  - [ ] Message broker integration (Apache Kafka)
+  - [x] Message broker integration (Apache Kafka)
   - [ ] Modular Dispatcher-Worker pattern implementation
   - [ ] Background job execution (email notifications, PDF ticket generation)
 - [ ] **Module 4: Observability, Testing & Cloud-Native**

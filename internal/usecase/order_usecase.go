@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/felix-gnwn/ticketing-engine/internal/domain"
@@ -12,13 +13,15 @@ type orderUseCase struct {
 	orderRepo       domain.OrderRepository
 	ticketRepo      domain.TicketRepository
 	idempotencyRepo domain.IdempotencyRepository
+	eventProducer   domain.EventProducer
 }
 
-func NewOrderUseCase(orderRepo domain.OrderRepository, ticketRepo domain.TicketRepository, idempotencyRepo domain.IdempotencyRepository) domain.OrderUseCase {
+func NewOrderUseCase(orderRepo domain.OrderRepository, ticketRepo domain.TicketRepository, idempotencyRepo domain.IdempotencyRepository, eventProducer domain.EventProducer) domain.OrderUseCase {
 	return &orderUseCase{
 		orderRepo:       orderRepo,
 		ticketRepo:      ticketRepo,
 		idempotencyRepo: idempotencyRepo,
+		eventProducer:   eventProducer,
 	}
 }
 
@@ -35,6 +38,7 @@ func (u *orderUseCase) CreateOrder(ctx context.Context, userID, ticketID string,
 		return nil, domain.ErrInvalidQuantity
 	}
 
+	// Redis Idempotency Gatekeeper (Distributed Atomic Lock SETNX + TTL 5m)
 	if idempotencyKey != "" {
 		acquired, err := u.idempotencyRepo.Lock(ctx, idempotencyKey, 5*time.Minute)
 		if err != nil {
@@ -85,6 +89,30 @@ func (u *orderUseCase) CreateOrder(ctx context.Context, userID, ticketID string,
 		}
 
 		return nil, err
+	}
+
+	if u.eventProducer != nil {
+		event := domain.OrderCreatedEvent{
+			OrderID:    order.ID,
+			UserID:     order.UserID,
+			TicketID:   order.TicketID,
+			Quantity:   order.Quantity,
+			TotalPrice: order.TotalPrice,
+			CreatedAt:  order.CreatedAt,
+		}
+
+		// Dispatch via background goroutine, so that HTTP response latency is not burdened
+		go func() {
+			asyncCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+
+			if pubErr := u.eventProducer.PublishOrderCreated(asyncCtx, event); pubErr != nil {
+				slog.Error("Background Event Producer failed to dispatch OrderCreated event",
+					slog.String("order_id", order.ID),
+					slog.String("error", pubErr.Error()),
+				)
+			}
+		}()
 	}
 
 	return order, nil

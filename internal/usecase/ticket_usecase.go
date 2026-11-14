@@ -32,6 +32,10 @@ func (uc *ticketUseCase) CreateEvent(ctx context.Context, ticket *domain.Ticket)
 		return domain.ErrInvalidPrice
 	}
 
+	if ticket.ID == "" {
+		ticket.ID = fmt.Sprintf("evt-%d", time.Now().UnixNano())
+	}
+
 	// Data Preparation (Set Audit Timestamps)
 	now := time.Now().UTC()
 	ticket.CreatedAt = now

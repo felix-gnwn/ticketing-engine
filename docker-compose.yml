@@ -29,8 +29,27 @@ services:
       - "${REDIS_PORT:-6379}:6379"
     volumes:
       - redis_data:/data
-
+  kafka:
+    image: redpandadata/redpanda:latest
+    container_name: ticketing-kafka
+    command:
+      - redpanda start
+      - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:${KAFKA_PORT:-19092}
+      - --advertise-kafka-addr internal://kafka:9092,external://${KAFKA_HOST:-localhost}:${KAFKA_PORT:-19092}
+      - --pandaproxy-addr 0.0.0.0:8082
+      - --advertise-pandaproxy-addr localhost:8082
+      - --smp 1
+      - --memory 1G
+      - --mode dev-container
+      - --default-log-level=info
+    ports:
+      - "${KAFKA_PORT:-19092}:${KAFKA_PORT:-19092}"
+      - "9092:9092"
+      - "8082:8082"
+    volumes:
+      - redpanda_data:/var/lib/redpanda/data
 volumes:
   pgdata:
   minio_data:
   redis_data:
+  redpanda_data:

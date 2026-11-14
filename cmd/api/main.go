@@ -22,6 +22,7 @@ import (
 	"github.com/felix-gnwn/ticketing-engine/internal/handler"
 	"github.com/felix-gnwn/ticketing-engine/internal/middleware"
 	cache "github.com/felix-gnwn/ticketing-engine/internal/repository/cache"
+	"github.com/felix-gnwn/ticketing-engine/internal/repository/messaging"
 	postgres "github.com/felix-gnwn/ticketing-engine/internal/repository/postgres"
 	storage "github.com/felix-gnwn/ticketing-engine/internal/repository/storage"
 	"github.com/felix-gnwn/ticketing-engine/internal/usecase"
@@ -72,9 +73,18 @@ func main() {
 	userHandler := handler.NewUserHandler(userUC)
 
 	// WIRING DEPENDENCY INJECTION - ORDER MODULE
+	eventProducer := messaging.NewKafkaProducer(cfg.KafkaBrokers, cfg.KafkaTopicOrderCreated)
+	defer func() {
+		if err := eventProducer.Close(); err != nil {
+			slog.Error("Failed to close Kafka producer connection gracefully", slog.String("error", err.Error()))
+		} else {
+			slog.Info("Kafka Producer connection closed gracefully")
+		}
+	}()
+
 	orderRepo := postgres.NewOrderRepository(dbPool)
 	idempotencyRepo := cache.NewRedisIdempotencyRepository(redisClient)
-	orderUC := usecase.NewOrderUseCase(orderRepo, ticketRepo, idempotencyRepo)
+	orderUC := usecase.NewOrderUseCase(orderRepo, ticketRepo, idempotencyRepo, eventProducer)
 	orderHandler := handler.NewOrderHandler(orderUC)
 
 	// INIT AWS/MINIO CONFIG
