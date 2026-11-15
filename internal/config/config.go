@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/joho/godotenv"
@@ -22,6 +23,11 @@ type Config struct {
 	MinIOBucket            string
 	KafkaBrokers           []string
 	KafkaTopicOrderCreated string
+	WorkerCount            int
+	WorkerBufferSize       int
+	KafkaConsumerGroup     string
+	KafkaMinBytes          int
+	KafkaMaxBytes          int
 }
 
 func Load() (*Config, error) {
@@ -43,6 +49,11 @@ func Load() (*Config, error) {
 		MinIOBucket:            getEnv("MINIO_BUCKET_NAME", ""),
 		KafkaBrokers:           strings.Split(brokersRaw, ","),
 		KafkaTopicOrderCreated: getEnv("KAFKA_TOPIC_ORDER_CREATED", "order-created-events"),
+		WorkerCount:            getEnvAsInt("WORKER_COUNT", 3),
+		WorkerBufferSize:       getEnvAsInt("WORKER_BUFFER_SIZE", 100),
+		KafkaConsumerGroup:     getEnv("KAFKA_CONSUMER_GROUP_ID", "ticketing-order-worker-group"),
+		KafkaMinBytes:          getEnvAsInt("KAFKA_MIN_BYTES", 10),           // Default 10B
+		KafkaMaxBytes:          getEnvAsInt("KAFKA_MAX_BYTES", 10*1024*1024), // Default 10MB
 	}
 
 	if cfg.JWTSecret == "" {
@@ -59,6 +70,16 @@ func Load() (*Config, error) {
 func getEnv(key, fallback string) string {
 	if value, exists := os.LookupEnv(key); exists && value != "" {
 		return value
+	}
+
+	return fallback
+}
+
+func getEnvAsInt(key string, fallback int) int {
+	if valueStr, exists := os.LookupEnv(key); exists && valueStr != "" {
+		if value, err := strconv.Atoi(valueStr); err == nil {
+			return value
+		}
 	}
 
 	return fallback

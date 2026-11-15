@@ -18,3 +18,8 @@ type EventProducer interface {
 	PublishOrderCreated(ctx context.Context, event OrderCreatedEvent) error
 	Close() error
 }
+
+type EventConsumer interface {
+	FetchOrderCreatedEvent(ctx context.Context) (OrderCreatedEvent, error)
+	Close() error
+}

@@ -8,7 +8,6 @@ import (
 	_ "net/http/pprof"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 	"time"
 
@@ -115,16 +114,6 @@ func main() {
 	assetUC := usecase.NewAssetUseCase(assetRepo, storageRepo)
 	assetHandler := handler.NewAssetHandler(assetUC)
 
-	// SETUP WORKER POOL
-	const numWorkers = 3
-	jobs := make(chan string, 100)
-	var wg sync.WaitGroup
-
-	for i := 1; i <= numWorkers; i++ {
-		wg.Add(1)
-		go worker(i, jobs, &wg)
-	}
-
 	// SETUP HTTP ROUTER & SERVER
 	mux := http.DefaultServeMux
 
@@ -136,14 +125,6 @@ func main() {
 	mux.HandleFunc("POST /api/v1/events", ticketHandler.CreateEvent)
 	mux.HandleFunc("GET /api/v1/events", ticketHandler.BrowseAvailable)
 	mux.HandleFunc("POST /api/v1/tickets/checkout", middleware.RequireAuth(ticketHandler.CheckoutTicket))
-	mux.HandleFunc("/api/ticket", func(w http.ResponseWriter, r *http.Request) {
-		orderID := fmt.Sprintf("TICKET-%d", time.Now().UnixNano())
-
-		jobs <- orderID
-
-		w.WriteHeader(http.StatusAccepted)
-		w.Write([]byte(fmt.Sprintf("Order %s has been accepted and queued for processing.n", orderID)))
-	})
 
 	// --- ROUTES: ASSET ---
 	mux.HandleFunc("POST /api/v1/assets/upload-url", middleware.RequireAuth(assetHandler.RequestUploadURL))
@@ -204,30 +185,4 @@ func main() {
 	} else {
 		slog.Info("HTTP server stopped accepting new requests")
 	}
-
-	// Close job channel and wait for workers to complete current tasks
-	close(jobs)
-	slog.Info("Waiting for background workers to finish remaining jobs...")
-	wg.Wait()
-
-	slog.Info("All workers stopped. System shutdown complete.")
-}
-
-// WORKER LOGIC
-func worker(id int, jobs <-chan string, wg *sync.WaitGroup) {
-	defer wg.Done()
-
-	for orderID := range jobs {
-		slog.Info("Worker started processing",
-			"worker_id", id,
-			"order_id", orderID)
-
-		// Simulate heavy database transaction or external API call
-		time.Sleep(2 * time.Second)
-
-		slog.Info("Worker finished processing",
-			"worker_id", id,
-			"order_id", orderID)
-	}
-	slog.Debug("Worker stopped (no more jobs in queue)", "worker_id", id)
 }
