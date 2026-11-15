@@ -39,7 +39,6 @@ func (h *TicketHandler) CreateEvent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ticket := &domain.Ticket{
-		ID:        req.ID,
 		EventName: req.EventName,
 		Quota:     req.Quota,
 		Price:     req.Price,

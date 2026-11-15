@@ -36,7 +36,7 @@ The project is structured according to Clean Architecture (Onion/Hexagonal) prin
   - [x] Graceful shutdown handling (`SIGINT`, `SIGTERM`)
   - [x] Runtime profiling integration (`pprof`)
 - [x] **Layer 1: Domain Layer**
-  - [x] Core domain entities (`User`, `Ticket`)
+  - [x] Core domain entities (`User`, `Ticket`, `Asset`, `Order`)
   - [x] Repository abstraction contracts (interfaces)
 - [x] **Layer 4: Infrastructure / Repository Layer**
   - [x] Connection pool initialization using `pgxpool`
@@ -54,13 +54,18 @@ The project is structured according to Clean Architecture (Onion/Hexagonal) prin
   - [x] AWS S3 / MinIO integration (Pre-signed URL for Govt. ID Card upload)
   - [x] S3-compatible client implementation using AWS SDK for Go v2
   - [x] Decoupled BLOB storage architecture with PostgreSQL metadata tracking
-  - [x] Two-phase upload workflow (PENDING -&gt; UPLOADED state transition)
+  - [x] Two-phase upload workflow (PENDING -> UPLOADED state transition)
   - [x] Clean Architecture layer separation (Domain, UseCase, Handler, Repository)
-- [ ] **Module 3: Order, Event-Driven & Caching**
-  - [ ] Distributed Caching & Idempotency Key (Redis)
-  - [ ] Message broker integration (Apache Kafka)
-  - [ ] Modular Dispatcher-Worker pattern implementation
-  - [ ] Background job execution (email notifications, PDF ticket generation)
+- [x] **Module 3: Order, Event-Driven & Caching**
+  - [x] Schema evolution & database migration (`000003_create_orders_table`)
+  - [x] Core order domain entities & repository abstraction contracts
+  - [x] ACID Database Transactions (`pgx.Tx`) & Optimistic Concurrency Control (OCC)
+  - [x] Distributed Caching & Idempotency Key (Redis Cache-Aside Pattern)
+  - [x] Enterprise Centralized Config (internal/config)
+  - [x] Distributed Idempotency Key Engine (Redis Atomic SetNX + TTL)
+  - [x] Message broker integration (Apache Kafka)
+  - [x] Modular Dispatcher-Worker pattern implementation
+  - [x] Background job execution (email notifications, PDF ticket generation)
 - [ ] **Module 4: Observability, Testing & Cloud-Native**
   - [ ] Middleware Context & Distributed Tracing (Trace ID)
   - [ ] Unit Testing for core business logic (50-70% coverage)
