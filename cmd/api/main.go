@@ -30,9 +30,11 @@ import (
 func main() {
 	// INIT STRUCTURED LOGGING (slog)
 	// JSON logs are mandatory for indexing and searching.
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+	baseJSONHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelDebug, // Display DEBUG, INFO, WARN, and ERROR
-	}))
+	})
+	traceHandler := middleware.NewTraceHandler(baseJSONHandler)
+	logger := slog.New(traceHandler)
 	slog.SetDefault(logger)
 
 	// LOAD ENTERPRISE CONFIGURATION (Fail-Fast & Centralized)
@@ -152,9 +154,10 @@ func main() {
 		w.Write([]byte("READY"))
 	})
 
+	handlerChain := middleware.TraceID(middleware.RequestLogger(mux))
 	srv := &http.Server{
 		Addr:    ":" + cfg.AppPort,
-		Handler: mux,
+		Handler: handlerChain,
 	}
 
 	// Run HTTP server asynchronously
