@@ -11,7 +11,7 @@ import (
 
 type orderJob struct {
 	event domain.OrderCreatedEvent
-	ctx context.Context
+	ctx   context.Context
 }
 
 type OrderProcessor struct {

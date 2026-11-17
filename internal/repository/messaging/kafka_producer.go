@@ -43,16 +43,16 @@ func (p *kafkaProducer) PublishOrderCreated(ctx context.Context, event domain.Or
 	var headers []kafka.Header
 	if traceID, ok := ctx.Value(middleware.TraceIDKey).(string); ok && traceID != "" {
 		headers = append(headers, kafka.Header{
-			Key: "trace_id",
+			Key:   "trace_id",
 			Value: []byte(traceID),
 		})
 	}
 
 	msg := kafka.Message{
-		Key:   []byte(event.OrderID),
-		Value: payload,
+		Key:     []byte(event.OrderID),
+		Value:   payload,
 		Headers: headers,
-		Time:  time.Now(),
+		Time:    time.Now(),
 	}
 
 	if err := p.writer.WriteMessages(ctx, msg); err != nil {
