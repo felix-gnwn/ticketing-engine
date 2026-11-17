@@ -20,6 +20,6 @@ type EventProducer interface {
 }
 
 type EventConsumer interface {
-	FetchOrderCreatedEvent(ctx context.Context) (OrderCreatedEvent, error)
+	FetchOrderCreatedEvent(ctx context.Context) (OrderCreatedEvent, context.Context, error)
 	Close() error
 }

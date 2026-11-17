@@ -9,14 +9,16 @@ import (
 	"time"
 
 	"github.com/felix-gnwn/ticketing-engine/internal/config"
+	"github.com/felix-gnwn/ticketing-engine/internal/middleware"
 	"github.com/felix-gnwn/ticketing-engine/internal/repository/messaging"
 	"github.com/felix-gnwn/ticketing-engine/internal/worker"
 )
 
 func main() {
 	// Setup Structured JSON Logger
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
-	slog.SetDefault(logger)
+	jsonHandler := slog.NewJSONHandler(os.Stdout, nil)
+	traceHandler := middleware.NewTraceHandler(jsonHandler)
+	slog.SetDefault(slog.New(traceHandler))
 
 	slog.Info("Starting Ticketing Engine Worker Daemon...")
 

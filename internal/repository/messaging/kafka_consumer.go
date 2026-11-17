@@ -8,6 +8,7 @@ import (
 	"github.com/segmentio/kafka-go"
 
 	"github.com/felix-gnwn/ticketing-engine/internal/domain"
+	"github.com/felix-gnwn/ticketing-engine/internal/middleware"
 )
 
 type kafkaConsumer struct {
@@ -28,18 +29,31 @@ func NewKafkaConsumer(brokers []string, topic, groupID string, minBytes, maxByte
 	}
 }
 
-func (c *kafkaConsumer) FetchOrderCreatedEvent(ctx context.Context) (domain.OrderCreatedEvent, error) {
+func (c *kafkaConsumer) FetchOrderCreatedEvent(ctx context.Context) (domain.OrderCreatedEvent, context.Context, error) {
 	msg, err := c.reader.ReadMessage(ctx)
 	if err != nil {
-		return domain.OrderCreatedEvent{}, fmt.Errorf("failed to read message from kafka: %w", err)
+		return domain.OrderCreatedEvent{}, nil, fmt.Errorf("failed to read message from kafka: %w", err)
 	}
 
 	var event domain.OrderCreatedEvent
 	if err := json.Unmarshal(msg.Value, &event); err != nil {
-		return domain.OrderCreatedEvent{}, fmt.Errorf("failed to unmarshal kafka message payload: %w", err)
+		return domain.OrderCreatedEvent{}, nil, fmt.Errorf("failed to unmarshal kafka message payload: %w", err)
 	}
 
-	return event, nil
+	var traceID string
+	for _, h := range msg.Headers {
+		if h.Key == "trace_id" {
+			traceID = string(h.Value)
+			break
+		}
+	}
+
+	msgCtx := context.Background()
+	if traceID != "" {
+		msgCtx = context.WithValue(msgCtx, middleware.TraceIDKey, traceID)
+	}
+
+	return event, msgCtx, nil
 }
 
 func (c *kafkaConsumer) Close() error {
