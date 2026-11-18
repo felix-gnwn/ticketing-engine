@@ -20,7 +20,7 @@ func (m *OrderRepositoryMock) Create(ctx context.Context, order *domain.Order) e
 
 func (m *OrderRepositoryMock) FindByID(ctx context.Context, id string) (*domain.Order, error) {
 	args := m.Called(ctx, id)
-	if args.Get(0) != nil {
+	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
 
