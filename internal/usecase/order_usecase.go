@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/felix-gnwn/ticketing-engine/internal/domain"
+	"github.com/felix-gnwn/ticketing-engine/internal/middleware"
 )
 
 type orderUseCase struct {
@@ -101,13 +102,19 @@ func (u *orderUseCase) CreateOrder(ctx context.Context, userID, ticketID string,
 			CreatedAt:  order.CreatedAt,
 		}
 
+		traceID, _ := ctx.Value(middleware.TraceIDKey).(string)
+
 		// Dispatch via background goroutine, so that HTTP response latency is not burdened
 		go func() {
 			asyncCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
 
+			if traceID != "" {
+				asyncCtx = context.WithValue(asyncCtx, middleware.TraceIDKey, traceID)
+			}
+
 			if pubErr := u.eventProducer.PublishOrderCreated(asyncCtx, event); pubErr != nil {
-				slog.Error("Background Event Producer failed to dispatch OrderCreated event",
+				slog.ErrorContext(asyncCtx, "Background Event Producer failed to dispatch OrderCreated event",
 					slog.String("order_id", order.ID),
 					slog.String("error", pubErr.Error()),
 				)

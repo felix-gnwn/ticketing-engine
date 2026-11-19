@@ -43,7 +43,7 @@ func (u *userUseCase) Register(ctx context.Context, user *domain.User) error {
 
 func (u *userUseCase) Login(ctx context.Context, email, password string) (string, error) {
 	user, err := u.userRepo.GetByEmail(ctx, email)
-	if err != nil {
+	if err != nil || user == nil {
 		return "", errors.New("invalid email or password")
 	}
 

@@ -67,8 +67,10 @@ The project is structured according to Clean Architecture (Onion/Hexagonal) prin
   - [x] Modular Dispatcher-Worker pattern implementation
   - [x] Background job execution (email notifications, PDF ticket generation)
 - [ ] **Module 4: Observability, Testing & Cloud-Native**
-  - [ ] Middleware Context & Distributed Tracing (Trace ID)
-  - [ ] Unit Testing for core business logic (50-70% coverage)
+  - [x] Middleware Context & Distributed Tracing (Trace ID)
+  - [x] Kafka Header Trace ID Propagation for asynchronous background workers
+  - [x] Unit Testing Architecture & Mocking Strategy (testify/mock)
+  - [x] Unit Testing for core business logic (50-70% coverage)
   - [ ] Kubernetes manifests ('Deployment', 'Service', 'ConfigMap', 'Ingress')
   - [ ] OpenAPI / Swagger specification
-  - [ ] Load testing & integration testing suite
+  - [x] Load testing & integration testing suite

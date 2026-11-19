@@ -10,6 +10,7 @@ import (
 	"github.com/segmentio/kafka-go"
 
 	"github.com/felix-gnwn/ticketing-engine/internal/domain"
+	"github.com/felix-gnwn/ticketing-engine/internal/middleware"
 )
 
 type kafkaProducer struct {
@@ -39,21 +40,30 @@ func (p *kafkaProducer) PublishOrderCreated(ctx context.Context, event domain.Or
 		return fmt.Errorf("failed to marshal OrderCreatedEvent: %w", err)
 	}
 
+	var headers []kafka.Header
+	if traceID, ok := ctx.Value(middleware.TraceIDKey).(string); ok && traceID != "" {
+		headers = append(headers, kafka.Header{
+			Key:   "trace_id",
+			Value: []byte(traceID),
+		})
+	}
+
 	msg := kafka.Message{
-		Key:   []byte(event.OrderID),
-		Value: payload,
-		Time:  time.Now(),
+		Key:     []byte(event.OrderID),
+		Value:   payload,
+		Headers: headers,
+		Time:    time.Now(),
 	}
 
 	if err := p.writer.WriteMessages(ctx, msg); err != nil {
-		slog.Error("Failed to dispatch OrderCreated event to Kafka",
+		slog.ErrorContext(ctx, "Failed to dispatch OrderCreated event to Kafka",
 			slog.String("order_id", event.OrderID),
 			slog.String("error", err.Error()),
 		)
 		return err
 	}
 
-	slog.Info("Successfully dispatched OrderCreated event to Kafka broker",
+	slog.InfoContext(ctx, "Successfully dispatched OrderCreated event to Kafka broker",
 		slog.String("order_id", event.OrderID),
 		slog.String("topic", p.topic),
 	)
