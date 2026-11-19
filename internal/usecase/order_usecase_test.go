@@ -226,12 +226,12 @@ func TestGetOrderByID_TableDriven(t *testing.T) {
 			orderID: "ORD-999",
 			setupMocks: func(orderRepo *mocks.OrderRepositoryMock) {
 				expectedOrder := &domain.Order{
-					ID: "ORD-999",
-					UserID: "usr-123",
-					TicketID: "tkt-888",
-					Quantity: 1,
+					ID:         "ORD-999",
+					UserID:     "usr-123",
+					TicketID:   "tkt-888",
+					Quantity:   1,
 					TotalPrice: 1500000.00,
-					Status: domain.OrderStatusPending,
+					Status:     domain.OrderStatusPending,
 				}
 
 				orderRepo.On("FindByID", mock.Anything, "ORD-999").Return(expectedOrder, nil).Once()

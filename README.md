@@ -73,4 +73,4 @@ The project is structured according to Clean Architecture (Onion/Hexagonal) prin
   - [ ] Unit Testing for core business logic (50-70% coverage)
   - [ ] Kubernetes manifests ('Deployment', 'Service', 'ConfigMap', 'Ingress')
   - [ ] OpenAPI / Swagger specification
-  - [ ] Load testing & integration testing suite
+  - [x] Load testing & integration testing suite
