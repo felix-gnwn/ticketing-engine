@@ -111,7 +111,7 @@ func TestOrderRepository_Integration_CreateAndFind(t *testing.T) {
 
 	err = orderRepo.Create(ctx, order)
 	require.NoError(t, err)
-	
+
 	// Verify Ticket Quota Decreased from 10 to 8 in database
 	fetchedTicket, err := ticketRepo.FindByID(ctx, ticketID)
 	require.NoError(t, err)

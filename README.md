@@ -70,7 +70,7 @@ The project is structured according to Clean Architecture (Onion/Hexagonal) prin
   - [x] Middleware Context & Distributed Tracing (Trace ID)
   - [x] Kafka Header Trace ID Propagation for asynchronous background workers
   - [x] Unit Testing Architecture & Mocking Strategy (testify/mock)
-  - [ ] Unit Testing for core business logic (50-70% coverage)
+  - [x] Unit Testing for core business logic (50-70% coverage)
   - [ ] Kubernetes manifests ('Deployment', 'Service', 'ConfigMap', 'Ingress')
   - [ ] OpenAPI / Swagger specification
   - [x] Load testing & integration testing suite
