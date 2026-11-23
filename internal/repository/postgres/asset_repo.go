@@ -23,22 +23,21 @@ func NewAssetRepository(db *pgxpool.Pool) domain.AssetRepository {
 
 func (r *assetRepository) CreateAsset(ctx context.Context, asset *domain.Asset) error {
 	query := `
-		INSERT INTO
-			assets (
-				id,
-				user_id,
-				object_key,
-				status,
-				created_at,
-				updated_at
-			)
+		INSERT INTO assets (
+			id
+			, user_id
+			, object_key
+			, status
+			, created_at
+			, updated_at
+		)
 		VALUES (
-			$1,
-			$2,
-			$3,
-			$4,
-			$5,
-			$6
+			$1
+			, $2
+			, $3
+			, $4
+			, $5
+			, $6
 		)
 	`
 
@@ -59,8 +58,8 @@ func (r *assetRepository) UpdateAssetStatus(ctx context.Context, id uuid.UUID, s
 		UPDATE
 			assets
 		SET
-			status = $1,
-			updated_at = CURRENT_TIMESTAMP
+			status = $1
+			, updated_at = CURRENT_TIMESTAMP
 		WHERE
 			id = $2
 	`
@@ -80,12 +79,12 @@ func (r *assetRepository) UpdateAssetStatus(ctx context.Context, id uuid.UUID, s
 func (r *assetRepository) GetAssetByID(ctx context.Context, id uuid.UUID) (*domain.Asset, error) {
 	query := `
 		SELECT
-			id,
-			user_id,
-			object_key,
-			status,
-			created_at,
-			updated_at
+			id
+			, user_id
+			, object_key
+			, status
+			, created_at
+			, updated_at
 		FROM
 			assets
 		WHERE

@@ -27,22 +27,22 @@ func (r *userRepository) Create(ctx context.Context, user *domain.User) error {
 
 	query := `
 		INSERT INTO users (
-			id,
-			name,
-			email,
-			password,
-			role,
-			created_at,
-			updated_at
+			id
+			, name
+			, email
+			, password
+			, role
+			, created_at
+			, updated_at
 		)
 		VALUES (
-			$1,
-			$2,
-			$3,
-			$4,
-			$5,
-			$6,
-			$7
+			$1
+			, $2
+			, $3
+			, $4
+			, $5
+			, $6
+			, $7
 		)
 	`
 
@@ -65,13 +65,13 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*domain.
 
 	query := `
 		SELECT
-			id,
-			name,
-			email,
-			password,
-			role,
-			created_at,
-			updated_at
+			id
+			, name
+			, email
+			, password
+			, role
+			, created_at
+			, updated_at
 		FROM
 			users
 		WHERE

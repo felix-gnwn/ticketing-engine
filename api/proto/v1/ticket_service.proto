@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package ticketing.v1;
+
+option go_package = "./api/proto/v1;ticketingv1";
+
+message Ticket {
+    string id = 1;
+    string event_name = 2;
+    int32 quota = 3;
+    double price = 4;
+    string created_at = 5;
+    string updated_at = 6;
+}
+
+message GetTicketAvailabilityRequest {
+    string ticket_id = 1;
+}
+
+message GetTicketAvailabilityResponse {
+    Ticket ticket = 1;
+}
+
+service TicketService {
+    rpc GetTicketAvailability(GetTicketAvailabilityRequest) returns (GetTicketAvailabilityResponse);
+}

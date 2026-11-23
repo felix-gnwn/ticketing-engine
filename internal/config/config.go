@@ -11,6 +11,7 @@ import (
 
 type Config struct {
 	AppPort                string
+	GRPCPort               string
 	JWTSecret              string
 	DBConnString           string
 	RedisHost              string
@@ -37,6 +38,7 @@ func Load() (*Config, error) {
 
 	cfg := &Config{
 		AppPort:                getEnv("PORT", "8080"),
+		GRPCPort:               getEnv("GRPC_PORT", "50051"),
 		JWTSecret:              getEnv("JWT_SECRET", ""),
 		DBConnString:           getEnv("DB_CONNECTION_STRING", ""),
 		RedisHost:              getEnv("REDIS_HOST", "localhost"),

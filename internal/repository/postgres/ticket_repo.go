@@ -27,20 +27,20 @@ func (r *ticketRepository) Create(ctx context.Context, ticket *domain.Ticket) er
 
 	query := `
 		INSERT INTO tickets (
-			id,
-			event_name,
-			price,
-			quota,
-			created_at,
-			updated_at
+			id
+			, event_name
+			, price
+			, quota
+			, created_at
+			, updated_at
 		)
 		VALUES (
-			$1,
-			$2,
-			$3,
-			$4,
-			$5,
-			$6
+			$1
+			, $2
+			, $3
+			, $4
+			, $5
+			, $6
 		)
 	`
 
@@ -62,12 +62,12 @@ func (r *ticketRepository) FindByID(ctx context.Context, id string) (*domain.Tic
 
 	query := `
 		SELECT
-			id,
-			event_name,
-			price,
-			quota,
-			created_at,
-			updated_at
+			id
+			, event_name
+			, price
+			, quota
+			, created_at
+			, updated_at
 		FROM
 			tickets
 		WHERE
@@ -101,12 +101,12 @@ func (r *ticketRepository) GetAvailableTickets(ctx context.Context) ([]*domain.T
 
 	query := `
 		SELECT
-			id,
-			event_name,
-			price,
-			quota,
-			created_at,
-			updated_at
+			id
+			, event_name
+			, price
+			, quota
+			, created_at
+			, updated_at
 		FROM
 			tickets
 		WHERE
@@ -151,8 +151,8 @@ func (r *ticketRepository) DecreaseQuota(ctx context.Context, id string, quantit
 		UPDATE
 			tickets
 		SET
-			quota = quota - $2,
-			updated_at = $3
+			quota = quota - $2
+			, updated_at = $3
 		WHERE
 			id = $1
 			AND quota >= $2

@@ -33,12 +33,14 @@ func (r *orderRepository) Create(ctx context.Context, order *domain.Order) error
 
 	// Safe: no-op if transaction is already committed
 	updateQuotaQuery := `
-		UPDATE tickets
+		UPDATE
+			tickets
 		SET
-			quota = quota - $2,
-			updated_at = $3
+			quota = quota - $2
+			, updated_at = $3
 		WHERE
-			id = $1 AND quota >= $2
+			id = $1
+			AND quota >= $2
 	`
 	cmdTag, err := tx.Exec(ctx, updateQuotaQuery, order.TicketID, order.Quantity, order.UpdatedAt)
 	if err != nil {
@@ -51,24 +53,24 @@ func (r *orderRepository) Create(ctx context.Context, order *domain.Order) error
 
 	insertOrderQuery := `
 		INSERT INTO orders (
-			id,
-			user_id,
-			ticket_id,
-			quantity,
-			total_price,
-			status,
-			created_at,
-			updated_at
+			id
+			, user_id
+			, ticket_id
+			, quantity
+			, total_price
+			, status
+			, created_at
+			, updated_at
 		)
 		VALUES (
-			$1,
-			$2,
-			$3,
-			$4,
-			$5,
-			$6,
-			$7,
-			$8
+			$1
+			, $2
+			, $3
+			, $4
+			, $5
+			, $6
+			, $7
+			, $8
 		)
 	`
 	_, err = tx.Exec(ctx, insertOrderQuery, order.ID, order.UserID, order.TicketID, order.Quantity, order.TotalPrice, order.Status, order.CreatedAt, order.UpdatedAt)
@@ -86,14 +88,14 @@ func (r *orderRepository) FindByID(ctx context.Context, id string) (*domain.Orde
 
 	query := `
 		SELECT
-			id,
-			user_id,
-			ticket_id,
-			quantity,
-			total_price,
-			status,
-			created_at,
-			updated_at
+			id
+			, user_id
+			, ticket_id
+			, quantity
+			, total_price
+			, status
+			, created_at
+			, updated_at
 		FROM
 			orders
 		WHERE
@@ -127,14 +129,14 @@ func (r *orderRepository) FindByUserID(ctx context.Context, userID string) ([]*d
 
 	query := `
 		SELECT
-			id,
-			user_id,
-			ticket_id,
-			quantity,
-			total_price,
-			status,
-			created_at,
-			updated_at
+			id
+			, user_id
+			, ticket_id
+			, quantity
+			, total_price
+			, status
+			, created_at
+			, updated_at
 		FROM
 			orders
 		WHERE
@@ -181,10 +183,11 @@ func (r *orderRepository) UpdateStatus(ctx context.Context, id string, status do
 	defer cancel()
 
 	query := `
-		UPDATE orders
+		UPDATE
+			orders
 		SET
-			status = $2,
-			updated_at = $3
+			status = $2
+			, updated_at = $3
 		WHERE
 			id = $1
 	`

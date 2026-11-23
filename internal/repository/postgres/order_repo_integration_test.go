@@ -54,22 +54,22 @@ func TestOrderRepository_Integration_CreateAndFind(t *testing.T) {
 	userID := uuid.New().String()
 	userQuery := `
 		INSERT INTO	users (
-			id,
-			name,
-			email,
-			password,
-			role,
-			created_at,
-			updated_at
+			id
+			, name
+			, email
+			, password
+			, role
+			, created_at
+			, updated_at
 		)
 		VALUES (
-			$1,
-			$2,
-			$3,
-			$4,
-			$5,
-			$6,
-			$7
+			$1
+			, $2
+			, $3
+			, $4
+			, $5
+			, $6
+			, $7
 		)
 	`
 	_, err := pool.Exec(ctx, userQuery, userID, "Integration Test User", "test_"+userID+"@example.com", "hashedpassword", "user", time.Now().UTC(), time.Now().UTC())
