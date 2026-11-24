@@ -50,6 +50,7 @@ The project is structured according to Clean Architecture (Onion/Hexagonal) prin
   - [x] REST API endpoints with HTTP Health Probes (`/healthz`, `/readyz`)
   - [x] JWT Authentication Middleware for route protection
   - [x] gRPC services & Protobuf definitions
+  - [x] gRPC Handlers & Unary Interceptors (Tracing, Logging, Recovery)
 - [x] **Module 2: Product & Asset Service**
   - [x] AWS S3 / MinIO integration (Pre-signed URL for Govt. ID Card upload)
   - [x] S3-compatible client implementation using AWS SDK for Go v2
