@@ -18,9 +18,11 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"google.golang.org/grpc"
 
+	ticketingv1 "github.com/felix-gnwn/ticketing-engine/api/proto/v1"
 	appConfig "github.com/felix-gnwn/ticketing-engine/internal/config"
 	"github.com/felix-gnwn/ticketing-engine/internal/database"
 	"github.com/felix-gnwn/ticketing-engine/internal/handler"
+	grpcHandler "github.com/felix-gnwn/ticketing-engine/internal/handler/grpc"
 	"github.com/felix-gnwn/ticketing-engine/internal/middleware"
 	cache "github.com/felix-gnwn/ticketing-engine/internal/repository/cache"
 	"github.com/felix-gnwn/ticketing-engine/internal/repository/messaging"
@@ -181,7 +183,19 @@ func main() {
 		os.Exit(1)
 	}
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(
+		grpc.ChainUnaryInterceptor(
+			middleware.GRPCTraceInterceptor(),
+			middleware.GRPCLoggingInterceptor(),
+			middleware.GRPCRecoveryInterceptor(),
+		),
+	)
+
+	// --- REGISTER GRPC SERVICES ---
+	orderGRPCHandler := grpcHandler.NewOrderGRPCHandler(orderUC)
+	ticketGRPCHandler := grpcHandler.NewTicketGRPCHandler(ticketUC)
+	ticketingv1.RegisterOrderServiceServer(grpcServer, orderGRPCHandler)
+	ticketingv1.RegisterTicketServiceServer(grpcServer, ticketGRPCHandler)
 
 	// Start gRPC server in a separate background goroutine
 	go func() {
