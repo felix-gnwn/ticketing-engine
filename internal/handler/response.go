@@ -5,10 +5,15 @@ import (
 	"net/http"
 )
 
-type jsonResponse struct {
+type JSONResponse struct {
 	Status  string      `json:"status"`
 	Message string      `json:"message,omitempty"`
 	Data    interface{} `json:"data,omitempty"`
+}
+
+type ErrorResponse struct {
+	Status  string `json:"status"`
+	Message string `json:"message"`
 }
 
 func writeJSON(w http.ResponseWriter, status int, data interface{}) {
@@ -18,7 +23,7 @@ func writeJSON(w http.ResponseWriter, status int, data interface{}) {
 }
 
 func writeError(w http.ResponseWriter, status int, err error) {
-	writeJSON(w, status, jsonResponse{
+	writeJSON(w, status, ErrorResponse{
 		Status:  "error",
 		Message: err.Error(),
 	})

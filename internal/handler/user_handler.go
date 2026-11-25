@@ -37,6 +37,17 @@ func NewUserHandler(userUC domain.UserUseCase) *UserHandler {
 }
 
 // HTTP Handlers
+// Register godoc
+// @Summary		Register a new user
+// @Description	Creates a new user account with hashed password
+// @Tags		Authentication
+// @Accept		json
+// @Produce		json
+// @Param		request body RegisterRequest true "Registration Payload"
+// @Success		201 {object} JSONResponse
+// @Failure		400 {object} ErrorResponse
+// @Failure		500 {object} ErrorResponse
+// @Router		/auth/register [post]
 func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var req RegisterRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -61,12 +72,23 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusCreated, jsonResponse{
+	writeJSON(w, http.StatusCreated, JSONResponse{
 		Status:  "success",
 		Message: "User registered successfully",
 	})
 }
 
+// Login godoc
+// @Summary		User login
+// @Description	Authenticates user and returns JWT token
+// @Tags		Authentication
+// @Accept		json
+// @Produce		json
+// @Param		request body LoginRequest true "Login Credentials"
+// @Success		200 {object} JSONResponse
+// @Failure		400 {object} ErrorResponse
+// @Failure		401 {object} ErrorResponse
+// @Router		/auth/login [post]
 func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var req LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -86,7 +108,7 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, jsonResponse{
+	writeJSON(w, http.StatusOK, JSONResponse{
 		Status:  "success",
 		Message: "Login successful",
 		Data: map[string]string{

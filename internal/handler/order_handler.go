@@ -36,6 +36,21 @@ func NewOrderHandler(orderUC domain.OrderUseCase) *OrderHandler {
 	}
 }
 
+// CreateOrder godoc
+// @Summary		Create a new ticket order
+// @Description	Processes order creation with Redis Idempotency Gatekeeper and Kafka Event Dispatching
+// @Tags		Orders
+// @Accept		json
+// @Produce		json
+// @Security	BearerAuth
+// @Param		X-Idempotency-Key header string false "Unique key to prevent duplicate orders"
+// @Param		request body CreateOrderRequest true "Order Creation Payload"
+// @Success		201 {object} OrderResponse
+// @Failure		400 {object} map[string]string
+// @Failure		401 {object} map[string]string
+// @Failure		409 {object} map[string]string
+// @Failure		500 {object} map[string]string
+// @Router		/orders [post]
 func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value(middleware.UserIDKey).(string)
 	if !ok || userID == "" {
@@ -94,6 +109,18 @@ func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(resp)
 }
 
+// GetOrderByID godoc
+// @Summary		Get order by ID
+// @Description	Fetches order details by its unique identifier
+// @Tags		Orders
+// @Produce		json
+// @Security	BearerAuth
+// @Param		id path string true "Order ID"
+// @Success		200 {object} domain.Order
+// @Failure		400 {object} map[string]string
+// @Failure		404 {object} map[string]string
+// @Failure		500 {object} map[string]string
+// @Router		/orders/{id} [get]
 func (h *OrderHandler) GetOrderByID(w http.ResponseWriter, r *http.Request) {
 	orderID := r.PathValue("id")
 	if orderID == "" {
@@ -122,6 +149,16 @@ func (h *OrderHandler) GetOrderByID(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(order)
 }
 
+// GetUserOrders godoc
+// @Summary		Get current user orders
+// @Description	Fetches all orders associated with the authenticated user
+// @Tags		Orders
+// @Produce		json
+// @Security	BearerAuth
+// @Success		200 {array} domain.Order
+// @Failure		401 {object} map[string]string
+// @Failure		500 {object} map[string]string
+// @Router		/orders [get]
 func (h *OrderHandler) GetUserOrders(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value(middleware.UserIDKey).(string)
 	if !ok || userID == "" {

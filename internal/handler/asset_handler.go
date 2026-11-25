@@ -33,6 +33,19 @@ type uploadRequest struct {
 	ContentType string `json:"content_type"`
 }
 
+// RequestUploadURL godoc
+// @Summary		Request S3 Presigned Upload URL
+// @Description	Generates a presigned S3 URL for uploading Govt. ID card
+// @Tags		Assets
+// @Accept		json
+// @Produce		json
+// @Security	BearerAuth
+// @Param		request body uploadRequest true "Upload Request Payload"
+// @Success		200 {object} JSONResponse
+// @Failure		400 {object} ErrorResponse
+// @Failure		401 {object} ErrorResponse
+// @Failure		500 {object} ErrorResponse
+// @Router		/assets/upload-url [post]
 func (h *AssetHandler) RequestUploadURL(w http.ResponseWriter, r *http.Request) {
 	userIDStr, ok := r.Context().Value(middleware.UserIDKey).(string)
 	if !ok || userIDStr == "" {
@@ -81,6 +94,18 @@ type confirmRequest struct {
 	AssetID string `json:"asset_id"`
 }
 
+// ConfirmUpload godoc
+// @Summary		Confirm S3 Asset Upload Status
+// @Description	Updates asset metadata status from PENDING to UPLOADED
+// @Tags		Assets
+// @Accept		json
+// @Produce		json
+// @Security	BearerAuth
+// @Param		request body confirmRequest true "Confirm Asset Payload"
+// @Success		200 {object} JSONResponse
+// @Failure		400 {object} ErrorResponse
+// @Failure		500 {object} ErrorResponse
+// @Router		/assets/confirm [put]
 func (h *AssetHandler) ConfirmUpload(w http.ResponseWriter, r *http.Request) {
 	var req confirmRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {

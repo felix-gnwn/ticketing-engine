@@ -1,0 +1,477 @@
+basePath: /api/v1
+definitions:
+  domain.Order:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      quantity:
+        type: integer
+      status:
+        $ref: '#/definitions/domain.OrderStatus'
+      ticket_id:
+        type: string
+      total_price:
+        type: number
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  domain.OrderStatus:
+    enum:
+    - PENDING
+    - PAID
+    - CANCELLED
+    - EXPIRED
+    type: string
+    x-enum-varnames:
+    - OrderStatusPending
+    - OrderStatusPaid
+    - OrderStatusCancelled
+    - OrderStatusExpired
+  handler.CreateOrderRequest:
+    properties:
+      quantity:
+        type: integer
+      ticket_id:
+        type: string
+    type: object
+  handler.ErrorResponse:
+    properties:
+      message:
+        type: string
+      status:
+        type: string
+    type: object
+  handler.JSONResponse:
+    properties:
+      data: {}
+      message:
+        type: string
+      status:
+        type: string
+    type: object
+  handler.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  handler.OrderResponse:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      quantity:
+        type: integer
+      status:
+        $ref: '#/definitions/domain.OrderStatus'
+      ticket_id:
+        type: string
+      total_price:
+        type: number
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  handler.RegisterRequest:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        minLength: 6
+        type: string
+    required:
+    - email
+    - name
+    - password
+    type: object
+  handler.checkoutRequest:
+    properties:
+      quantity:
+        type: integer
+      ticket_id:
+        type: string
+    type: object
+  handler.confirmRequest:
+    properties:
+      asset_id:
+        type: string
+    type: object
+  handler.createEventRequest:
+    properties:
+      event_name:
+        type: string
+      id:
+        type: string
+      price:
+        type: number
+      quota:
+        type: integer
+    type: object
+  handler.uploadRequest:
+    properties:
+      content_type:
+        type: string
+      filename:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Enterprise Cloud-Native Ticketing Engine Service built with Go, PostgreSQL,
+    Redis, Kafka, and gRPC.
+  termsOfService: http://swagger.io/terms/
+  title: Ticketing Engine API
+  version: "1.0"
+paths:
+  /assets/confirm:
+    put:
+      consumes:
+      - application/json
+      description: Updates asset metadata status from PENDING to UPLOADED
+      parameters:
+      - description: Confirm Asset Payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.confirmRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.JSONResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Confirm S3 Asset Upload Status
+      tags:
+      - Assets
+  /assets/upload-url:
+    post:
+      consumes:
+      - application/json
+      description: Generates a presigned S3 URL for uploading Govt. ID card
+      parameters:
+      - description: Upload Request Payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.uploadRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.JSONResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Request S3 Presigned Upload URL
+      tags:
+      - Assets
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticates user and returns JWT token
+      parameters:
+      - description: Login Credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.JSONResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: User login
+      tags:
+      - Authentication
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new user account with hashed password
+      parameters:
+      - description: Registration Payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handler.JSONResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Register a new user
+      tags:
+      - Authentication
+  /events:
+    get:
+      description: Fetches active tickets with Redis Cache-Aside pattern
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.JSONResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Browse available tickets
+      tags:
+      - Tickets
+  /orders:
+    get:
+      description: Fetches all orders associated with the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.Order'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get current user orders
+      tags:
+      - Orders
+    post:
+      consumes:
+      - application/json
+      description: Processes order creation with Redis Idempotency Gatekeeper and
+        Kafka Event Dispatching
+      parameters:
+      - description: Unique key to prevent duplicate orders
+        in: header
+        name: X-Idempotency-Key
+        type: string
+      - description: Order Creation Payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.CreateOrderRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handler.OrderResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new ticket order
+      tags:
+      - Orders
+  /orders/{id}:
+    get:
+      description: Fetches order details by its unique identifier
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Order'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get order by ID
+      tags:
+      - Orders
+  /tickets:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new ticket inventory item in PostgreSQL
+      parameters:
+      - description: Event Ticket Creation Payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.createEventRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handler.JSONResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Create a new event ticket
+      tags:
+      - Tickets
+  /tickets/checkout:
+    post:
+      consumes:
+      - application/json
+      description: Decreases ticket quota directly with anti race-condition OCC handling
+      parameters:
+      - description: Checkout Payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.checkoutRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.JSONResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Direct Ticket Checkout
+      tags:
+      - Tickets
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer " followed by your JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

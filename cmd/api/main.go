@@ -16,9 +16,12 @@ import (
 	awsConfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	httpSwagger "github.com/swaggo/http-swagger/v2"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 
 	ticketingv1 "github.com/felix-gnwn/ticketing-engine/api/proto/v1"
+	_ "github.com/felix-gnwn/ticketing-engine/docs"
 	appConfig "github.com/felix-gnwn/ticketing-engine/internal/config"
 	"github.com/felix-gnwn/ticketing-engine/internal/database"
 	"github.com/felix-gnwn/ticketing-engine/internal/handler"
@@ -30,6 +33,19 @@ import (
 	storage "github.com/felix-gnwn/ticketing-engine/internal/repository/storage"
 	"github.com/felix-gnwn/ticketing-engine/internal/usecase"
 )
+
+// @title			Ticketing Engine API
+// @version			1.0
+// @description		Enterprise Cloud-Native Ticketing Engine Service built with Go, PostgreSQL, Redis, Kafka, and gRPC.
+// @termsOfService	http://swagger.io/terms/
+
+// @host			localhost:8080
+// @BasePath		/api/v1
+
+// @securityDefinitions.apikey BearerAuth
+// @in				header
+// @name			Authorization
+// @description		Type "Bearer " followed by your JWT token.
 
 func main() {
 	// INIT STRUCTURED LOGGING (slog)
@@ -141,6 +157,9 @@ func main() {
 	mux.HandleFunc("GET /api/v1/orders", middleware.RequireAuth(orderHandler.GetUserOrders))
 	mux.HandleFunc("GET /api/v1/orders/{id}", middleware.RequireAuth(orderHandler.GetOrderByID))
 
+	// --- ROUTES: SWAGGER DOCUMENTATION ---
+	mux.HandleFunc("GET /swagger/", httpSwagger.WrapHandler)
+
 	// Health Probe (Liveness)
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -190,6 +209,9 @@ func main() {
 			middleware.GRPCRecoveryInterceptor(),
 		),
 	)
+
+	// Enable gRPC Server Reflection for dynamic discovery
+	reflection.Register(grpcServer)
 
 	// --- REGISTER GRPC SERVICES ---
 	orderGRPCHandler := grpcHandler.NewOrderGRPCHandler(orderUC)
