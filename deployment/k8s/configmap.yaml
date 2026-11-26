@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ticketing-config
+  labels:
+    app.kubernetes.io/name: ticketing-engine
+    app.kubernetes.io/component: configuration
+data:
+  # Application Ports
+  PORT: "8080"
+  GRPC_PORT: "50051"
+
+  # Redis Configuration (K8s Internal Service)
+  REDIS_HOST: "ticketing-redis"
+  REDIS_PORT: "6379"
+
+  # Kafka Configuration (K8s Internal Broker)
+  KAFKA_BROKERS: "ticketing-kafka:9092"
+  KAFKA_TOPIC_ORDER_CREATED: "order-created-events"
+  KAFKA_CONSUMER_GROUP_ID: "ticketing-order-worker-group"
+
+  # Worker Pool Concurrency Settings
+  WORKER_COUNT: "5"
+  WORKER_BUFFER_SIZE: "200"
+
+  # Storage Configuration (MinIO / S3)
+  MINIO_ENDPOINT: "http://ticketing-minio:9000"
+  MINIO_REGION: "us-east-1"
+  MINIO_BUCKET_NAME: "ticketing-assets"
+  AWS_EC2_METADATA_DISABLED: "true"

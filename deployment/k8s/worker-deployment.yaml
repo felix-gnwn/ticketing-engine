@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ticketing-worker
+  labels:
+    app: ticketing-worker
+    tier: worker
+    app.kubernetes.io/name: ticketing-engine
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ticketing-worker
+  template:
+    metadata:
+      labels:
+        app: ticketing-worker
+        tier: worker
+    spec:
+      containers:
+        - name: worker-daemon
+          image: ticketing-engine-worker:latest
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+              name: ticketing-config
+            - secretRef:
+              name: ticketing-secret
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi

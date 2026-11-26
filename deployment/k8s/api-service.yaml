@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ticketing-api-service
+  labels:
+    app: ticketing-api
+    app.kubernetes.io/name: ticketing-engine
+spec:
+  type: ClusterIP
+  selector:
+    app: ticketing-api
+  ports:
+    - name: http-rest
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+    - name: grpc-port
+      port: 50051
+      targetPort: 50051
+      protocol: TCP

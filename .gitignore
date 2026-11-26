@@ -6,3 +6,6 @@
 
 # Test & Coverage artifacts
 *.out
+
+# Kubernetes Secrets
+deployment/k8s/secret.yaml
